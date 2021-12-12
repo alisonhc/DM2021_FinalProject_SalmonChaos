@@ -1,5 +1,4 @@
 import logging
-from sklearn.metrics import average_precision_score
 from typing import List
 import numpy as np
 import os
@@ -24,7 +23,7 @@ class BinarySoftmaxEvaluator:
         self.name = name
 
         self.csv_file = "BinarySoftmaxEvaluator" + ("_" + name if name else '') + "_results.csv"
-        self.csv_headers = ["epoch", "steps", "Accuracy", "F1", "Precision", "Recall", "Average_Precision"]
+        self.csv_headers = ["epoch", "steps", "Accuracy", "F1", "Precision", "Recall"]
         self.write_csv = write_csv
 
     @classmethod
@@ -59,13 +58,11 @@ class BinarySoftmaxEvaluator:
         precision = total_num_true_positive_preds / total_num_positive_preds
         recall = total_num_true_positive_preds / (total_num_true_positive_preds + total_num_false_negative_preds)
         f1 = 2 * precision * recall / (precision + recall)
-        ap = average_precision_score(self.labels, pred_scores)
 
         logger.info(f"Accuracy:           {acc * 100}")
         logger.info(f"F1:   {f1 * 100}")
         logger.info(f"Precision:          {precision * 100}")
         logger.info(f"Recall:             {recall * 100}")
-        logger.info(f"Average Precision:  {ap * 100}")
 
         if output_path is not None and self.write_csv:
             csv_path = os.path.join(output_path, self.csv_file)
@@ -75,6 +72,6 @@ class BinarySoftmaxEvaluator:
                 if not output_file_exists:
                     writer.writerow(self.csv_headers)
 
-                writer.writerow([epoch, steps, acc, f1, precision, recall, ap])
+                writer.writerow([epoch, steps, acc, f1, precision, recall])
 
-        return ap
+        return f1
