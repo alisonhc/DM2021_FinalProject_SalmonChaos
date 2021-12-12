@@ -49,15 +49,7 @@ class BinarySoftmaxEvaluator:
         pred_scores = model.predict(self.sentence_pairs, convert_to_numpy=True, show_progress_bar=False)
         pred_labels = np.argmax(pred_scores, axis=1)
         assert len(pred_labels) == len(self.labels)
-        num_acc = np.sum(pred_labels == self.labels)
-        acc = num_acc / len(self.labels)
-        total_num_positive_preds = sum(pred_labels)
-        array_ones = np.asarray([1 for _ in range(len(self.labels))])
-        total_num_true_positive_preds = np.sum((pred_labels == array_ones) == self.labels)
-        total_num_false_negative_preds = np.sum((pred_labels != array_ones) != self.labels)
-        precision = total_num_true_positive_preds / total_num_positive_preds
-        recall = total_num_true_positive_preds / (total_num_true_positive_preds + total_num_false_negative_preds)
-        f1 = 2 * precision * recall / (precision + recall)
+        acc, f1, precision, recall = self.get_precision_recall_f1(pred_labels=pred_labels)
 
         logger.info(f"Accuracy:           {acc * 100}")
         logger.info(f"F1:   {f1 * 100}")
@@ -75,3 +67,25 @@ class BinarySoftmaxEvaluator:
                 writer.writerow([epoch, steps, acc, f1, precision, recall])
 
         return f1
+
+    def get_precision_recall_f1(self, pred_labels):
+        num_acc = 0
+        total_num_false_pos_preds = 0
+        total_num_true_pos_preds = 0
+        total_num_false_neg_preds = 0
+
+        for i in range(len(pred_labels)):
+            if pred_labels[i] == self.labels[i]:
+                num_acc += 1
+                if pred_labels[i] == 1:
+                    total_num_true_pos_preds += 1
+            else:
+                if pred_labels[i] == 0:
+                    total_num_false_neg_preds += 1
+                else:
+                    total_num_false_pos_preds += 1
+        precision = total_num_true_pos_preds / (total_num_true_pos_preds + total_num_false_pos_preds)
+        recall = total_num_true_pos_preds / (total_num_true_pos_preds + total_num_false_neg_preds)
+        acc = num_acc / len(self.labels)
+        f1 = 2 * precision * recall / (precision + recall)
+        return acc, f1, precision, recall
